@@ -106,11 +106,11 @@ if __name__ == '__main__':
         logger.info("-----AWS S3 Connectivity Intiated-----")
 
         logger.info("Setting Up S3 client")
-        s3_client = boto3.client("s3", region_name='ap-south-1', aws_access_key_id='AKIASC3QUFY6ZSPNUTCB', aws_secret_access_key='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')
+        s3_client = boto3.client("s3", region_name='ap-south-1', aws_access_key_id='AKIASC3QUFY6SICETLNP', aws_secret_access_key='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')
 
         logger.info("Setting Up Os.environ")
-        os.environ['aws_access_key_id'] = 'AKIASC3QUFY6ZSPNUTCB'
-        os.environ['aws_secret_access_key'] = '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'
+        os.environ['aws_access_key_id'] = 'AKIASC3QUFY6SICETLNP'
+        os.environ['aws_secret_access_key'] = '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'
 
         s3 = boto3.resource('s3')
 
