@@ -1,0 +1,1 @@
+table_1/userdata1.parquet|d4885adc20c6338d607dcbb52038ab96,table_1/userdata2.parquet|d4885adc20c6338d607dcbb52038ab96,table_2/userdata3.parquet|d4885adc20c6338d607dcbb5203812458,table_2/userdata4.parquet|d4885adc20c6338d607dcbb52038857698
