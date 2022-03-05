@@ -1,5 +1,7 @@
 import boto3
 import psycopg2
+import base64
+from botocore.exceptions import ClientError
 import os
 from logging import *
 
@@ -11,6 +13,60 @@ logger.info("-------------------------------------------------------Job Started-
 
 #-----------------------------------------------------------------------------------------------------------------------
 # DB connection
+
+def get_secret():
+
+    secret_name = "arn:aws:secretsmanager:ap-south-1:143580737085:secret:migration-rCAgd5"
+    region_name = "ap-south-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
+    # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    # We rethrow the exception by default.
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+        print(get_secret_value_response)
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'DecryptionFailureException':
+            # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InternalServiceErrorException':
+            # An error occurred on the server side.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidParameterException':
+            # You provided an invalid value for a parameter.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidRequestException':
+            # You provided a parameter value that is not valid for the current state of the resource.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'ResourceNotFoundException':
+            # We can't find the resource that you asked for.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+    else:
+        # Decrypts secret using the associated KMS key.
+        # Depending on whether the secret is a string or binary, one of these fields will be populated.
+        print(1)
+        if 'SecretString' in get_secret_value_response:
+            secret = get_secret_value_response['SecretString']
+            print(secret)
+        else:
+            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+            print(decoded_binary_secret)
+
 class DBConnection:
     def __init__(self): ## These values should be read from AWS Secret Manager - In Secret Manager Password and userid should be encrypted form.
         self.host = "xxxx-ap-south-1-db.cckebez2onwv.ap-south-1.rds.amazonaws.com"
@@ -50,11 +106,11 @@ if __name__ == '__main__':
         logger.info("-----AWS S3 Connectivity Intiated-----")
 
         logger.info("Setting Up S3 client")
-        s3_client = boto3.client("s3", region_name='', aws_access_key_id='', aws_secret_access_key='')
+        s3_client = boto3.client("s3", region_name='ap-south-1', aws_access_key_id='AKIASC3QUFY6T3WDXXG6', aws_secret_access_key='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')
 
         logger.info("Setting Up Os.environ")
-        os.environ['aws_access_key_id'] = 'AKIAWJDXUJQ65MVS2OHT'
-        os.environ['aws_secret_access_key'] = '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'
+        os.environ['aws_access_key_id'] = 'AKIASC3QUFY6T3WDXXG6'
+        os.environ['aws_secret_access_key'] = '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'
 
         s3 = boto3.resource('s3')
 
@@ -63,7 +119,7 @@ if __name__ == '__main__':
             logger.info("Inside upload_log function")
             folder = 'logfile/' + 'logfile.log'
             try:
-                s3_client.upload_file('C:\\Users\\sumit\\PycharmProjects\\mysample\\logfile.log', bucket_name, folder)
+                s3_client.upload_file('logfile.log', bucket_name, folder)
                 logger.info("Log File Uploaded Successfully!!.")
             except Exception as e:
                 logger.error("LogFile Uploaded Failed!!.")
@@ -83,10 +139,10 @@ if __name__ == '__main__':
         #s3 = boto3.resource('s3')
 
         try:
-            if 'index-bucket-sf' and 'parquet-bucket-sf' in s3_bucket:
+            if 'index-bucket-sfs' and 'parquet-bucket-sfs' in s3_bucket:
                 logger.info("index-bucket and parquet-bucket found in the s3_bucket list")
-                index_bucket = s3.Bucket('index-bucket-sf')
-                parquet_bucket1 = s3.Bucket('parquet-bucket-sf')
+                index_bucket = s3.Bucket('index-bucket-sfs')
+                parquet_bucket1 = s3.Bucket('parquet-bucket-sfs')
                 table_list = []
                 index_parquet_list = []
                 split_table_list = []
@@ -135,7 +191,7 @@ if __name__ == '__main__':
                                 print("Parquet file validation will happen")
                                 copy_command = ("COPY global.ecy_job1 FROM " + "'s3://parquet-bucket-1/" + table_list[split_table_list.index(i)][0] + "{}'".format(l[0]) + "IAM_ROLE 'arn:aws:iam::0123456789:role/sf_poc_redshift_role'" + 'FORMAT AS PARQUET;')
 
-                                print("processing file :" + 's3://parquet-bucket-1/'+ table_list[split_table_list.index(i)] + 'start time : ', datetime_object)
+                                # print("processing file :" + 's3://parquet-bucket-1/'+ table_list[split_table_list.index(i)] + 'start time : ', datetime_object)
 
                                 logger.log("Creating Database Connection")
                                 con = get_db_conn()
@@ -155,7 +211,7 @@ if __name__ == '__main__':
                                 logger.log("Copying completed to redshift for file")
                                 logger.log(table_list[split_table_list.index(i)])
 
-                                print("Data processing completed successfully for file :" + 's3://parquet-bucket-1/' + table_list[split_table_list.index(i)],datetime_object)
+                                # print("Data processing completed successfully for file :" + 's3://parquet-bucket-1/' + table_list[split_table_list.index(i)],datetime_object)
                     else:
 
                         logger.error("Index File Not Present-----!!")
@@ -170,7 +226,8 @@ if __name__ == '__main__':
         logger.critical("Main Execution Stopped----->")
 
     finally:
-        upload_log('log-bucket')
+        upload_log('testbucketsuraj')
+        # get_secret()
         logger.info("Job Executed------------------------------------------------------------------------------------------------------------------")
 
 
