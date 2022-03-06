@@ -5,6 +5,7 @@ import base64
 from botocore.exceptions import ClientError
 import os
 from logging import *
+import json
 
 LOG_FORMAT = '{lineno}  : {name}: {asctime}: {message}'
 basicConfig(filename='logfile.log',level=DEBUG, filemode = 'a',style='{',format=LOG_FORMAT)
@@ -44,27 +45,33 @@ def get_secret():
     else:
         if 'SecretString' in get_secret_value_response:
             secret = get_secret_value_response['SecretString']
-            print(secret)
+            return secret
         else:
             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-            print(decoded_binary_secret)
+            return decoded_binary_secret
 
 class DBConnection:
-    def __init__(self): ## These values should be read from AWS Secret Manager - In Secret Manager Password and userid should be encrypted form.
-        self.host = "redshift-cluster-1.c04kzwicvscs.ap-south-1.redshift.amazonaws.com"
-        self.port = "5439"
+    def __init__(self, secrets): ## These values should be read from AWS Secret Manager - In Secret Manager Password and userid should be encrypted form.
+        # self.host = "redshift-cluster-1.c04kzwicvscs.ap-south-1.redshift.amazonaws.com"
+        # self.port = "5439"
+        # self.dbname = "dev"
+        # self.user = "awsuser"
+        # self.password = "MNTHfyget1-"
+        self.host = secrets["host"]
+        self.port = str(secrets["port"])
         self.dbname = "dev"
-        self.user = "awsuser"
-        self.password = "MNTHfyget1-."
+        self.user = secrets["username"]
+        self.password = secrets["password"]
+
 
     def get_db_connection(self):
         try:
             # db_conn = psycopg2.connect(host=self.host, port=self.port, dbname=self.dbname, user=self.user,password=self.password)
             db_conn = redshift_connector.connect(
-                        host='redshift-cluster-1.c04kzwicvscs.ap-south-1.redshift.amazonaws.com',
-                        database='dev',
-                        user='awsuser',
-                        password='MNTHfyget1-.'
+                        host=self.host,
+                        database=self.dbname,
+                        user=self.user,
+                        password=self.password
             )
             logger.info("DB Connection Successful")
             print("Db connection established")
@@ -77,10 +84,13 @@ class DBConnection:
             # print("Db connection failed")
             logger.error(e)
 
-def get_db_conn():
+def get_db_conn(secrets):
     logger.info("Inside get_db_conn")
-    postgres_db = DBConnection()
+    print("Suraj mc")
+    postgres_db = DBConnection(secrets)
+    print("Suraj bc")
     db_conn = postgres_db.get_db_connection()
+    print("suraj rndi")
     return db_conn
 
 
@@ -129,7 +139,12 @@ if __name__ == '__main__':
                 copy_command = ("COPY table_1 FROM 's3://parquet-bucket-sfs/table_1/userdata8.parquet' IAM_ROLE 'arn:aws:iam::143580737085:role/migrationrole' FORMAT AS PARQUET;")
                 print("Db connection started")
                 # logger.log("Creating Database Connection")
-                con = get_db_conn()
+                secrets = get_secret()
+                secrets = secrets.replace("\n", "")
+                secrets = secrets.replace(" ", "")
+                secrets = json.loads(secrets)
+                print(secrets["host"])
+                con = get_db_conn(secrets)
                 cur = con.cursor()
                 print("Db connection established")
                 # logger.log("Copying started for parquet file to redshift")
@@ -148,5 +163,5 @@ if __name__ == '__main__':
 
     finally:
         # upload_log('testbucketsuraj')
-        get_secret()
+        
         logger.info("Job Executed------------------------------------------------------------------------------------------------------------------")
