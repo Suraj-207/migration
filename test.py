@@ -86,11 +86,8 @@ class DBConnection:
 
 def get_db_conn(secrets):
     logger.info("Inside get_db_conn")
-    print("Suraj mc")
     postgres_db = DBConnection(secrets)
-    print("Suraj bc")
     db_conn = postgres_db.get_db_connection()
-    print("suraj rndi")
     return db_conn
 
 
