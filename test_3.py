@@ -69,11 +69,11 @@ def get_secret():
 
 class DBConnection:
     def __init__(self): ## These values should be read from AWS Secret Manager - In Secret Manager Password and userid should be encrypted form.
-        self.host = "xxxx-ap-south-1-db.cckebez2onwv.ap-south-1.rds.amazonaws.com"
-        self.port = "5432"
-        self.dbname = "webappdb"
-        self.user = "postgres"
-        self.password = "master123"
+        self.host = "redshift-cluster-1.c04kzwicvscs.ap-south-1.redshift.amazonaws.com"
+        self.port = "5439"
+        self.dbname = "dev"
+        self.user = "suraj"
+        self.password = "LUYWDjpwpd747)."
 
     def get_db_connection(self):
         try:
@@ -179,6 +179,7 @@ if __name__ == '__main__':
                         logger.info("Parquet file details of index.txt updated in index_parquet_list")
 
                         print("Index parquet list : ",index_parquet_list)
+                        print(table_list[split_table_list.index(2)])
                         for i in index_parquet_list:
                             logger.info("checking parquet file")
                             logger.info(i)
@@ -226,8 +227,8 @@ if __name__ == '__main__':
         logger.critical("Main Execution Stopped----->")
 
     finally:
-        upload_log('testbucketsuraj')
-        # get_secret()
+        # upload_log('testbucketsuraj')
+        get_secret()
         logger.info("Job Executed------------------------------------------------------------------------------------------------------------------")
 
 
